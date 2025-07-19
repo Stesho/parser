@@ -1,3 +1,4 @@
+import puppeteerCore from "puppeteer";
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import express from "express";
@@ -16,6 +17,7 @@ const URL =
 
 const fetchRate = async () => {
   const browser = await puppeteer.launch({
+    executablePath: "/usr/bin/google-chrome-stable",
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
 
@@ -24,6 +26,7 @@ const fetchRate = async () => {
   await page.setViewport({ width: 1366, height: 768 });
   await page.goto(URL, {
     waitUntil: "domcontentloaded",
+    timeout: 60000,
   });
 
   await page.waitForSelector("table tbody tr td:nth-child(4)");
@@ -47,7 +50,7 @@ const fetchRate = async () => {
 
 (async () => {
   await fetchRate();
-  setInterval(fetchRate, 10_000);
+  setInterval(fetchRate, 60_000);
 })();
 
 const app = express();

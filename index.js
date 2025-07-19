@@ -1,5 +1,6 @@
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
+import express from "express";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -48,3 +49,14 @@ const fetchRate = async () => {
   await fetchRate();
   setInterval(fetchRate, 10_000);
 })();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get("/rates.txt", (req, res) => {
+  res.sendFile(FILE_PATH);
+});
+
+app.listen(PORT, () => {
+  console.log(`Server start on port ${PORT}`);
+});

@@ -1,4 +1,3 @@
-import puppeteerCore from "puppeteer";
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import express from "express";
@@ -15,42 +14,53 @@ const FILE_PATH = path.join(__dirname, "rates.txt");
 const URL =
   "https://exnode.ru/exchange/tether_trc20_usdt-usdttrc-to-sberbank-sberrub";
 
+let page;
+let browser;
+
 const fetchRate = async () => {
-  const browser = await puppeteer.launch({
-    executablePath: "/usr/bin/google-chrome-stable",
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  });
+  if (!page) return;
 
-  const page = await browser.newPage();
+  try {
+    await page.goto(URL, {
+      waitUntil: "domcontentloaded",
+      timeout: 60000,
+    });
 
-  await page.setViewport({ width: 1366, height: 768 });
-  await page.goto(URL, {
-    waitUntil: "domcontentloaded",
-    timeout: 60000,
-  });
+    await page.waitForSelector("table tbody tr td:nth-child(4)", {
+      timeout: 20000,
+    });
 
-  await page.waitForSelector("table tbody tr td:nth-child(4)");
+    const rates = await page.$$eval("table tbody tr td:nth-child(4)", (tds) =>
+      tds.map((td) => td.firstChild.textContent.trim())
+    );
 
-  const rates = await page.$$eval("table tbody tr td:nth-child(4)", (tds) =>
-    tds.map((td) => td.firstChild.textContent)
-  );
+    const bestRate = rates[0];
+    const log = `[${new Date().toLocaleTimeString()}]: ${bestRate}`;
+    const data = [
+      `USDTTRC20 - SBERRUB : ${bestRate} + 0.001`,
+      `SBERRUB - USDTTRC20 : (USDTTRC20 - SBERRUB)`,
+    ].join("\n");
 
-  const bestRate = rates[0];
-  const log = `[${new Date().toLocaleTimeString()}]: ${bestRate}`;
-  const data = [
-    `USDTTRC20 - SBERRUB : ${bestRate} + 0.001`,
-    `SBERRUB - USDTTRC20 : (USDTTRC20 - SBERRUB)`,
-  ].join("\n");
-
-  console.log(log);
-
-  await fs.writeFile(FILE_PATH, data, "utf-8");
-  await browser.close();
+    console.log(log);
+    await fs.writeFile(FILE_PATH, data, "utf-8");
+  } catch (err) {
+    console.error("Fetch error:", err);
+  }
 };
 
 (async () => {
+  browser = await puppeteer.launch({
+    executablePath: "/usr/bin/google-chrome-stable",
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    headless: true,
+  });
+
+  page = await browser.newPage();
+  await page.setViewport({ width: 1366, height: 768 });
+
+  await fs.writeFile(FILE_PATH, "", "utf-8");
   await fetchRate();
-  setInterval(fetchRate, 60_000);
+  setInterval(fetchRate, 20_000);
 })();
 
 const app = express();
@@ -62,4 +72,9 @@ app.get("/rates.txt", (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server start on port ${PORT}`);
+});
+
+process.on("SIGINT", async () => {
+  if (browser) await browser.close();
+  process.exit(0);
 });

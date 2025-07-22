@@ -1,4 +1,3 @@
-import puppeteerCore from "puppeteer";
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import express from "express";
@@ -15,13 +14,40 @@ const FILE_PATH = path.join(__dirname, "rates.txt");
 const URL =
   "https://exnode.ru/exchange/tether_trc20_usdt-usdttrc-to-sberbank-sberrub";
 
-const fetchRate = async () => {
+const proxyList = [
+  "bn8GSgVk:2LgriTmQ@45.146.169.134:63804",
+  "bn8GSgVk:2LgriTmQ@45.140.63.125:62674",
+  "bn8GSgVk:2LgriTmQ@212.193.102.160:62290",
+  "bn8GSgVk:2LgriTmQ@195.209.135.131:64670",
+  "bn8GSgVk:2LgriTmQ@213.226.102.212:63770",
+  "bn8GSgVk:2LgriTmQ@91.188.228.152:62464",
+  "bn8GSgVk:2LgriTmQ@176.103.92.217:62166",
+  "bn8GSgVk:2LgriTmQ@176.103.93.92:61736",
+  "bn8GSgVk:2LgriTmQ@195.19.173.124:63294",
+  "bn8GSgVk:2LgriTmQ@85.143.51.109:62450",
+];
+
+async function fetchRate() {
+  const proxy = proxyList[Math.floor(Math.random() * proxyList.length)];
+  const [auth, hostPort] = proxy.split("@");
+  const [user, pass] = auth.split(":");
+  const [host, port] = hostPort.split(":");
+
+  console.log(`[INFO] Используем прокси: ${host}:${port}`);
+
   const browser = await puppeteer.launch({
-    executablePath: "/usr/bin/google-chrome-stable",
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    headless: true,
+    // executablePath: "/usr/bin/google-chrome-stable",
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      `--proxy-server=${host}:${port}`,
+    ],
   });
 
   const page = await browser.newPage();
+
+  await page.authenticate({ username: user, password: pass });
 
   await page.setViewport({ width: 1366, height: 768 });
   await page.goto(URL, {
@@ -32,7 +58,7 @@ const fetchRate = async () => {
   await page.waitForSelector("table tbody tr td:nth-child(4)");
 
   const rates = await page.$$eval("table tbody tr td:nth-child(4)", (tds) =>
-    tds.map((td) => td.firstChild.textContent)
+    tds.map((td) => td.firstChild.textContent.trim())
   );
 
   const bestRate = rates[0];
@@ -46,7 +72,7 @@ const fetchRate = async () => {
 
   await fs.writeFile(FILE_PATH, data, "utf-8");
   await browser.close();
-};
+}
 
 (async () => {
   await fetchRate();

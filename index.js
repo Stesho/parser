@@ -28,50 +28,54 @@ const proxyList = [
 ];
 
 async function fetchRate() {
-  const proxy = proxyList[Math.floor(Math.random() * proxyList.length)];
-  const [auth, hostPort] = proxy.split("@");
-  const [user, pass] = auth.split(":");
-  const [host, port] = hostPort.split(":");
+  try {
+    const proxy = proxyList[Math.floor(Math.random() * proxyList.length)];
+    const [auth, hostPort] = proxy.split("@");
+    const [user, pass] = auth.split(":");
+    const [host, port] = hostPort.split(":");
 
-  console.log(`[INFO] Используем прокси: ${host}:${port}`);
+    console.log(`[INFO] Используем прокси: ${host}:${port}`);
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    // executablePath: "/usr/bin/google-chrome-stable",
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      `--proxy-server=${host}:${port}`,
-    ],
-  });
+    const browser = await puppeteer.launch({
+      headless: true,
+      executablePath: "/usr/bin/google-chrome-stable",
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        `--proxy-server=${host}:${port}`,
+      ],
+    });
 
-  const page = await browser.newPage();
+    const page = await browser.newPage();
 
-  await page.authenticate({ username: user, password: pass });
+    await page.authenticate({ username: user, password: pass });
 
-  await page.setViewport({ width: 1366, height: 768 });
-  await page.goto(URL, {
-    waitUntil: "domcontentloaded",
-    timeout: 60000,
-  });
+    await page.setViewport({ width: 1366, height: 768 });
+    await page.goto(URL, {
+      waitUntil: "domcontentloaded",
+      timeout: 60000,
+    });
 
-  await page.waitForSelector("table tbody tr td:nth-child(4)");
+    await page.waitForSelector("table tbody tr td:nth-child(4)");
 
-  const rates = await page.$$eval("table tbody tr td:nth-child(4)", (tds) =>
-    tds.map((td) => td.firstChild.textContent.trim())
-  );
+    const rates = await page.$$eval("table tbody tr td:nth-child(4)", (tds) =>
+      tds.map((td) => td.firstChild.textContent.trim())
+    );
 
-  const bestRate = rates[0];
-  const log = `[${new Date().toLocaleTimeString()}]: ${bestRate}`;
-  const data = [
-    `USDTTRC20 - SBERRUB : ${bestRate} + 0.001`,
-    `SBERRUB - USDTTRC20 : (USDTTRC20 - SBERRUB)`,
-  ].join("\n");
+    const bestRate = rates[0];
+    const log = `[${new Date().toLocaleTimeString()}]: ${bestRate}`;
+    const data = [
+      `USDTTRC20 - SBERRUB : ${bestRate} + 0.001`,
+      `SBERRUB - USDTTRC20 : (USDTTRC20 - SBERRUB)`,
+    ].join("\n");
 
-  console.log(log);
+    console.log(log);
 
-  await fs.writeFile(FILE_PATH, data, "utf-8");
-  await browser.close();
+    await fs.writeFile(FILE_PATH, data, "utf-8");
+    await browser.close();
+  } catch(err) {
+    console.error(err);
+  }
 }
 
 (async () => {

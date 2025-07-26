@@ -65,7 +65,7 @@ async function fetchRate() {
     const bestRate = rates[0];
     const log = `[${new Date().toLocaleTimeString()}]: ${bestRate}`;
     const data = [
-      `USDTTRC20 - SBERRUB : ${bestRate} + 0.001`,
+      `USDTTRC20 - SBERRUB : ${bestRate} + 0.0006`,
       `SBERRUB - USDTTRC20 : (USDTTRC20 - SBERRUB)`,
     ].join("\n");
 

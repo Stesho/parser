@@ -57,13 +57,21 @@ async function fetchRate() {
     });
 
     await page.waitForSelector("table tbody tr td:nth-child(4)");
+    await page.waitForSelector("table tbody tr td:nth-child(1)");
 
+    const names = await page.$$eval("table tbody tr td:nth-child(1)", (tds) => tds.map(tds => tds.textContent.trim()));
     const rates = await page.$$eval("table tbody tr td:nth-child(4)", (tds) =>
       tds.map((td) => td.firstChild.textContent.trim())
     );
 
-    const bestRate = rates[0];
-    const log = `[${new Date().toLocaleTimeString()}]: ${bestRate}`;
+    const bestExchange = names[0];
+    let bestRate = rates[0];
+    const log = `[${new Date().toLocaleTimeString()}]: ${bestExchange} ${bestRate}`;
+    
+    if(bestExchange === 'VibeBit') {
+      bestRate = rates[1];
+    }
+    
     const data = [
       `USDTTRC20 - SBERRUB : ${bestRate} + 0.0006`,
       `SBERRUB - USDTTRC20 : (USDTTRC20 - SBERRUB)`,

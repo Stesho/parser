@@ -15,16 +15,16 @@ const URL =
   "https://exnode.ru/exchange/tether_trc20_usdt-usdttrc-to-sberbank-sberrub";
 
 const proxyList = [
-  "bn8GSgVk:2LgriTmQ@45.146.169.134:63804",
-  "bn8GSgVk:2LgriTmQ@45.140.63.125:62674",
-  "bn8GSgVk:2LgriTmQ@212.193.102.160:62290",
-  "bn8GSgVk:2LgriTmQ@195.209.135.131:64670",
-  "bn8GSgVk:2LgriTmQ@213.226.102.212:63770",
-  "bn8GSgVk:2LgriTmQ@91.188.228.152:62464",
-  "bn8GSgVk:2LgriTmQ@176.103.92.217:62166",
-  "bn8GSgVk:2LgriTmQ@176.103.93.92:61736",
-  "bn8GSgVk:2LgriTmQ@195.19.173.124:63294",
-  "bn8GSgVk:2LgriTmQ@85.143.51.109:62450",
+  "adkgwmfT:uGYhU2yM@45.145.91.110:63538", 
+  "adkgwmfT:uGYhU2yM@193.58.170.58:64392", 
+  "adkgwmfT:uGYhU2yM@45.128.129.16:62588", 
+  "adkgwmfT:uGYhU2yM@92.249.15.219:62810", 
+  "adkgwmfT:uGYhU2yM@194.226.112.218:64898", 
+  "adkgwmfT:uGYhU2yM@193.232.113.240:63700", 
+  "adkgwmfT:uGYhU2yM@194.226.20.233:62258", 
+  "adkgwmfT:uGYhU2yM@195.208.82.166:64544", 
+  "adkgwmfT:uGYhU2yM@195.208.93.30:64454", 
+  "adkgwmfT:uGYhU2yM@154.211.18.212:64408",
 ];
 
 async function fetchRate() {

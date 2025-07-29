@@ -2,15 +2,10 @@ import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import express from "express";
 import fs from "fs/promises";
-import path from "path";
-import { fileURLToPath } from "url";
 
 puppeteer.use(StealthPlugin());
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const FILE_PATH = path.join(__dirname, "rates.txt");
+const FILE_PATH = "/app/data/rates.txt";;
 const URL =
   "https://exnode.ru/exchange/tether_trc20_usdt-usdttrc-to-sberbank-sberrub";
 

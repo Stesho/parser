@@ -9,6 +9,4 @@ RUN npm install
 
 COPY . .
 
-USER pptruser
-
 CMD ["node", "index.js"]

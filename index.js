@@ -88,7 +88,7 @@ async function fetchRate() {
 
 (async function loop() {
   await fetchRate();
-  setTimeout(loop, 1_000);
+  setTimeout(loop, 20_000);
 })();
 
 const app = express();

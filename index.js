@@ -116,6 +116,11 @@ async function fetchRates() {
     });
 
     const result = await Promise.all(urls.map(({pair, url}) => fetchRate(browser, url, user, pass, pair)));
+
+    if(result.some((val) => val === null)) {
+      return;
+    }
+
     const fileData = result.filter(Boolean).join('\n');
     
     await fs.writeFile(FILE_PATH, fileData, "utf-8");

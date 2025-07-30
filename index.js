@@ -22,13 +22,12 @@ const proxyList = [
   "adkgwmfT:uGYhU2yM@154.211.18.212:64408",
 ];
 
-let currentProxy = 0;
 let browser;
 let page;
 
 async function init() {
   try {
-    const proxy = proxyList[currentProxy];
+    const proxy = proxyList[Math.floor(Math.random() * proxyList.length)];
     const [auth, hostPort] = proxy.split("@");
     const [user, pass] = auth.split(":");
     const [host, port] = hostPort.split(":");
@@ -61,13 +60,11 @@ async function init() {
 
 async function scrape() {
   try {
-    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForSelector("table ~ div > div:nth-of-type(2) > div > p:first-of-type");
+    await page.waitForSelector("table ~ div div > div > div:nth-of-type(3) > p");
 
-    await page.waitForSelector("table tbody tr td:nth-child(4)");
-    await page.waitForSelector("table tbody tr td:nth-child(1)");
-
-    const names = await page.$$eval("table tbody tr td:nth-child(1)", (tds) => tds.map(tds => tds.textContent.trim()));
-    const rates = await page.$$eval("table tbody tr td:nth-child(4)", (tds) =>
+    const names = await page.$$eval("table ~ div > div:nth-of-type(2) > div > p:first-of-type", (tds) => tds.map(tds => tds.textContent.trim()));
+    const rates = await page.$$eval("table ~ div div > div > div:nth-of-type(3) > p", (tds) =>
       tds.map((td) => td.firstChild.textContent.trim())
     );
 
@@ -92,12 +89,14 @@ async function scrape() {
   }
 }
 
+async function loop() {
+  await scrape();
+  setTimeout(loop, 10_000);
+}
+
 (async function() {
   await init();
-  (async function loop() {
-    await scrape();
-    setTimeout(loop, 20_000);
-  })();
+  await loop();
 })();
 
 const app = express();

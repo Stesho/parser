@@ -23,10 +23,10 @@ const proxyList = [
 ];
 
 let currentProxy = 0;
+let browser;
+let page;
 
-async function fetchRate() {
-  let browser;
-
+async function init() {
   try {
     const proxy = proxyList[currentProxy];
     const [auth, hostPort] = proxy.split("@");
@@ -45,7 +45,7 @@ async function fetchRate() {
       ],
     });
 
-    const page = await browser.newPage();
+    page = await browser.newPage();
 
     await page.authenticate({ username: user, password: pass });
 
@@ -54,6 +54,14 @@ async function fetchRate() {
       waitUntil: "domcontentloaded",
       timeout: 60000,
     });
+  } catch(err) {
+    console.error(err);
+  }
+}
+
+async function scrape() {
+  try {
+    await page.reload({ waitUntil: "domcontentloaded" });
 
     await page.waitForSelector("table tbody tr td:nth-child(4)");
     await page.waitForSelector("table tbody tr td:nth-child(1)");
@@ -80,25 +88,16 @@ async function fetchRate() {
 
     await fs.writeFile(FILE_PATH, data, "utf-8");
   } catch(err) {
-    console.error(err);
-  } finally {
-    if(currentProxy < proxyList.length - 1) {
-      currentProxy += 1;
-    }
-    else {
-      currentProxy = 0;
-    }
-    if (browser) {
-      await browser.close().catch((err) =>
-        console.error(`[BROWSER CLOSE ERROR] ${err.message}`)
-      );
-    }
+    console.log(err);
   }
 }
 
-(async function loop() {
-  await fetchRate();
-  setTimeout(loop, 20_000);
+(async function() {
+  await init();
+  (async function loop() {
+    await scrape();
+    setTimeout(loop, 20_000);
+  })();
 })();
 
 const app = express();

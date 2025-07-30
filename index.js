@@ -89,7 +89,16 @@ async function scrape() {
   }
 }
 
+let startTime = Date.now();
+
 async function loop() {
+  const elapsed = Date.now() - startTime;
+
+  if (elapsed > 900_000) {
+    await page.reload();
+    startTime = Date.now();
+  }
+
   await scrape();
   setTimeout(loop, 10_000);
 }

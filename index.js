@@ -22,16 +22,20 @@ const proxyList = [
   "adkgwmfT:uGYhU2yM@154.211.18.212:64408",
 ];
 
+let currentProxy = 0;
+
 async function fetchRate() {
+  let browser;
+
   try {
-    const proxy = proxyList[Math.floor(Math.random() * proxyList.length)];
+    const proxy = proxyList[currentProxy];
     const [auth, hostPort] = proxy.split("@");
     const [user, pass] = auth.split(":");
     const [host, port] = hostPort.split(":");
 
     console.log(`[INFO] Используем прокси: ${host}:${port}`);
 
-    const browser = await puppeteer.launch({
+    browser = await puppeteer.launch({
       headless: true,
       executablePath: "/usr/bin/google-chrome-stable",
       args: [
@@ -75,9 +79,20 @@ async function fetchRate() {
     console.log(log);
 
     await fs.writeFile(FILE_PATH, data, "utf-8");
-    await browser.close();
   } catch(err) {
     console.error(err);
+  } finally {
+    if(currentProxy < proxyList.length - 1) {
+      currentProxy += 1;
+    }
+    else {
+      currentProxy = 0;
+    }
+    if (browser) {
+      await browser.close().catch((err) =>
+        console.error(`[BROWSER CLOSE ERROR] ${err.message}`)
+      );
+    }
   }
 }
 

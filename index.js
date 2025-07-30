@@ -6,8 +6,33 @@ import fs from "fs/promises";
 puppeteer.use(StealthPlugin());
 
 const FILE_PATH = "/app/data/rates.txt";;
-const URL =
-  "https://exnode.ru/exchange/tether_trc20_usdt-usdttrc-to-sberbank-sberrub";
+
+const urls = [
+  {
+    pair: ['USDTTRC20', 'SBERRUB'],
+    url: "https://exnode.ru/exchange/tether_trc20_usdt-usdttrc-to-sberbank-sberrub",
+  },
+  {
+    pair: ['USDTTRC20', 'TCSBRUB'],
+    url: "https://exnode.ru/exchange/tether_trc20_usdt-usdttrc-to-tinkoff-tcsbrub",
+  },
+  {
+    pair: ['BTC', 'SBERRUB'],
+    url: "https://exnode.ru/exchange/bitcoin_btc-btc-to-sberbank-sberrub",
+  },
+  {
+    pair: ['BTC', 'SBPRUB'],
+    url: "https://exnode.ru/exchange/bitcoin_btc-btc-to-sbprub-sbprub",
+  },
+  {
+    pair: ['USDTTRC20', 'SBPRUB'],
+    url: "https://exnode.ru/exchange/tether_trc20_usdt-usdttrc-to-sbprub-sbprub",
+  },
+  {
+    pair: ['USDTBEP20', 'SBERRUB'],
+    url: "https://exnode.ru/exchange/tether_bep20_usdt-usdtbep20-to-sberbank-sberrub",
+  },
+];
 
 const proxyList = [
   "adkgwmfT:uGYhU2yM@45.145.91.110:63538", 
@@ -24,33 +49,14 @@ const proxyList = [
 
 let currentProxy = 0;
 
-async function fetchRate() {
-  let browser;
+async function fetchRate(browser, url, user, pass, pair) {
+  const page = await browser.newPage();
 
+  await page.authenticate({ username: user, password: pass });
+  await page.setViewport({ width: 1366, height: 768 });
+  
   try {
-    const proxy = proxyList[currentProxy];
-    const [auth, hostPort] = proxy.split("@");
-    const [user, pass] = auth.split(":");
-    const [host, port] = hostPort.split(":");
-
-    console.log(`[INFO] Используем прокси: ${host}:${port}`);
-
-    browser = await puppeteer.launch({
-      headless: true,
-      executablePath: "/usr/bin/google-chrome-stable",
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        `--proxy-server=${host}:${port}`,
-      ],
-    });
-
-    const page = await browser.newPage();
-
-    await page.authenticate({ username: user, password: pass });
-
-    await page.setViewport({ width: 1366, height: 768 });
-    await page.goto(URL, {
+    await page.goto(url, {
       waitUntil: "domcontentloaded",
       timeout: 60000,
     });
@@ -71,14 +77,48 @@ async function fetchRate() {
       bestRate = rates[1];
     }
     
+    const [from, to] = pair;
     const data = [
-      `USDTTRC20 - SBERRUB : ${bestRate} + 0.0006`,
-      `SBERRUB - USDTTRC20 : (USDTTRC20 - SBERRUB)`,
+      `${from} - ${to} : ${bestRate} + 0.0006`,
+      `${to} - ${from} : (${from} - ${to})`,
     ].join("\n");
 
     console.log(log);
 
-    await fs.writeFile(FILE_PATH, data, "utf-8");
+    return data;
+  } catch(err) {
+    console.error(`[ERROR] Ошибка при обработке ${url}: ${err.message}`);
+    return null;
+  } finally {
+    await page.close().catch(() => {});
+  }
+}
+
+async function fetchRates() {
+  let browser;
+
+  try {
+    const proxy = proxyList[currentProxy];
+    const [auth, hostPort] = proxy.split("@");
+    const [user, pass] = auth.split(":");
+    const [host, port] = hostPort.split(":");
+
+    console.log(`[INFO] Используем прокси: ${host}:${port}`);
+
+    browser = await puppeteer.launch({
+      headless: true,
+      executablePath: "/usr/bin/google-chrome-stable",
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        `--proxy-server=${host}:${port}`,
+      ],
+    });
+
+    const result = await Promise.all(urls.map(({pair, url}) => fetchRate(browser, url, user, pass, pair)));
+    const fileData = result.filter(Boolean).join('\n');
+    
+    await fs.writeFile(FILE_PATH, fileData, "utf-8");
   } catch(err) {
     console.error(err);
   } finally {
@@ -97,7 +137,7 @@ async function fetchRate() {
 }
 
 (async function loop() {
-  await fetchRate();
+  await fetchRates();
   setTimeout(loop, 20_000);
 })();
 

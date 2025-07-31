@@ -24,10 +24,21 @@ const proxyList = [
 
 let browser;
 let page;
+let currentProxyIndex = 0;
+
+const getNextProxy = () => {
+  const proxy = proxyList[currentProxyIndex % proxyList.length];
+  currentProxyIndex++;
+  return proxy;
+};
 
 async function init() {
   try {
-    const proxy = proxyList[Math.floor(Math.random() * proxyList.length)];
+    if(browser) {
+      await browser.close();
+    }
+
+    const proxy = getNextProxy();
     const [auth, hostPort] = proxy.split("@");
     const [user, pass] = auth.split(":");
     const [host, port] = hostPort.split(":");
@@ -47,7 +58,6 @@ async function init() {
     page = await browser.newPage();
 
     await page.authenticate({ username: user, password: pass });
-
     await page.setViewport({ width: 1366, height: 768 });
     await page.goto(URL, {
       waitUntil: "domcontentloaded",
@@ -55,6 +65,7 @@ async function init() {
     });
   } catch(err) {
     console.error(err);
+    await init();
   }
 }
 
@@ -95,7 +106,7 @@ async function loop() {
   const elapsed = Date.now() - startTime;
 
   if (elapsed > 900_000) {
-    await page.reload();
+    await init();
     startTime = Date.now();
   }
 

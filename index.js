@@ -49,35 +49,64 @@ const urls = [
 
 let browser;
 const pages = [];
+let currentProxyIndex = 0;
+
+const getNextProxy = () => {
+  const proxy = proxyList[currentProxyIndex % proxyList.length];
+  currentProxyIndex++;
+  return proxy;
+};
 
 async function init() {
-  try {
-    const proxy = proxyList[Math.floor(Math.random() * proxyList.length)];
+  let attempt = 0;
+  let success = false;
+
+  while (!success && attempt < proxyList.length) {
+    const proxy = getNextProxy();
     const [auth, hostPort] = proxy.split("@");
     const [user, pass] = auth.split(":");
     const [host, port] = hostPort.split(":");
 
-    console.log(`[INFO] Используем прокси: ${host}:${port}`);
+    console.log(`[INFO] Попытка запуска с прокси ${host}:${port} [#${attempt + 1}]`);
 
-    browser = await puppeteer.launch({
-      headless: true,
-      executablePath: "/usr/bin/google-chrome-stable",
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        `--proxy-server=${host}:${port}`,
-      ],
-    });
+    try {
+      if (browser) {
+        await browser.close();
+      }
 
-    for (let i = 0; i < urls.length; i++) {
-      const page = await browser.newPage();
-      await page.authenticate({ username: user, password: pass });
-      await page.setViewport({ width: 1366, height: 768 });
-      await page.goto(urls[i].url, { waitUntil: "domcontentloaded", timeout: 60000 });
-      pages.push(page);
+      pages.length = 0;
+
+      browser = await puppeteer.launch({
+        headless: true,
+        executablePath: "/usr/bin/google-chrome-stable",
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          `--proxy-server=${host}:${port}`,
+        ],
+      });
+
+      for (let i = 0; i < urls.length; i++) {
+        const page = await browser.newPage();
+        await page.authenticate({ username: user, password: pass });
+        await page.setViewport({ width: 1366, height: 768 });
+        await page.goto(urls[i].url, {
+          waitUntil: "domcontentloaded",
+          timeout: 60000,
+        });
+        pages.push(page);
+      }
+
+      console.log(`[INFO] Браузер успешно запущен с ${host}:${port}`);
+      success = true;
+    } catch (err) {
+      console.error(`[ERROR] Не удалось запустить браузер с ${host}:${port}:`, err.message);
+      attempt++;
     }
-  } catch(err) {
-    console.error(err);
+  }
+
+  if (!success) {
+    throw new Error("Не удалось запустить браузер ни с одним из прокси");
   }
 }
 
@@ -93,12 +122,13 @@ async function fetchRate(page, pair) {
 
     const bestExchange = names[0];
     let bestRate = rates[0];
-    const log = `[${new Date().toLocaleTimeString()}]: ${bestExchange} ${bestRate}`;
+    const log = `[${new Date().toLocaleTimeString()}]: (${pair.join(' - ')}) ${bestExchange} ${bestRate}`;
     
     if(bestExchange === 'VibeBit') {
       bestRate = rates[1];
     }
     
+    bestRate = bestRate.replace(/ /g, '');
     const [from, to] = pair;
     const data = [
       `${from} - ${to} : ${bestRate} + 0.0006`,
@@ -136,11 +166,12 @@ async function loop() {
   const elapsed = Date.now() - startTime;
 
   if (elapsed > 900_000) {
-    await Promise.allSettled(pages.map(page => page.reload()));
+    await init();
     startTime = Date.now();
   }
 
   await scrape();
+  console.log('====');
   setTimeout(loop, 10_000);
 }
 

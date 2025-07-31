@@ -6,8 +6,6 @@ import fs from "fs/promises";
 puppeteer.use(StealthPlugin());
 
 const FILE_PATH = "/app/data/rates.txt";;
-const URL =
-  "https://exnode.ru/exchange/tether_trc20_usdt-usdttrc-to-sberbank-sberrub";
 
 const proxyList = [
   "adkgwmfT:uGYhU2yM@45.145.91.110:63538", 
@@ -22,8 +20,35 @@ const proxyList = [
   "adkgwmfT:uGYhU2yM@154.211.18.212:64408",
 ];
 
+const urls = [
+  {
+    pair: ['USDTTRC20', 'SBERRUB'],
+    url: "https://exnode.ru/exchange/tether_trc20_usdt-usdttrc-to-sberbank-sberrub",
+  },
+  {
+    pair: ['USDTTRC20', 'TCSBRUB'],
+    url: "https://exnode.ru/exchange/tether_trc20_usdt-usdttrc-to-tinkoff-tcsbrub",
+  },
+  {
+    pair: ['BTC', 'SBERRUB'],
+    url: "https://exnode.ru/exchange/bitcoin_btc-btc-to-sberbank-sberrub",
+  },
+  {
+    pair: ['BTC', 'SBPRUB'],
+    url: "https://exnode.ru/exchange/bitcoin_btc-btc-to-sbprub-sbprub",
+  },
+  {
+    pair: ['USDTTRC20', 'SBPRUB'],
+    url: "https://exnode.ru/exchange/tether_trc20_usdt-usdttrc-to-sbprub-sbprub",
+  },
+  {
+    pair: ['USDTBEP20', 'SBERRUB'],
+    url: "https://exnode.ru/exchange/tether_bep20_usdt-usdtbep20-to-sberbank-sberrub",
+  },
+];
+
 let browser;
-let page;
+const pages = [];
 
 async function init() {
   try {
@@ -44,21 +69,19 @@ async function init() {
       ],
     });
 
-    page = await browser.newPage();
-
-    await page.authenticate({ username: user, password: pass });
-
-    await page.setViewport({ width: 1366, height: 768 });
-    await page.goto(URL, {
-      waitUntil: "domcontentloaded",
-      timeout: 60000,
-    });
+    for (let i = 0; i < urls.length; i++) {
+      const page = await browser.newPage();
+      await page.authenticate({ username: user, password: pass });
+      await page.setViewport({ width: 1366, height: 768 });
+      await page.goto(urls[i].url, { waitUntil: "domcontentloaded", timeout: 60000 });
+      pages.push(page);
+    }
   } catch(err) {
     console.error(err);
   }
 }
 
-async function scrape() {
+async function fetchRate(page, pair) {
   try {
     await page.waitForSelector("table ~ div > div:nth-of-type(2) > div > p:first-of-type");
     await page.waitForSelector("table ~ div div > div > div:nth-of-type(3) > p");
@@ -76,14 +99,32 @@ async function scrape() {
       bestRate = rates[1];
     }
     
+    const [from, to] = pair;
     const data = [
-      `USDTTRC20 - SBERRUB : ${bestRate} + 0.0006`,
-      `SBERRUB - USDTTRC20 : (USDTTRC20 - SBERRUB)`,
+      `${from} - ${to} : ${bestRate} + 0.0006`,
+      `${to} - ${from} : (${from} - ${to})`,
     ].join("\n");
 
     console.log(log);
 
-    await fs.writeFile(FILE_PATH, data, "utf-8");
+    return data;
+  } catch(err) {
+    console.error(`[ERROR] Ошибка при обработке ${pair.join(' - ')}: ${err.message}`);
+    return null;
+  }
+}
+
+async function scrape() {
+  try {
+    const result = await Promise.all(pages.map((page, ind) => fetchRate(page, urls[ind].pair)));
+
+    if(result.some((val) => val === null)) {
+      return;
+    }
+
+    const fileData = result.filter(Boolean).join('\n');
+
+    await fs.writeFile(FILE_PATH, fileData, "utf-8");
   } catch(err) {
     console.log(err);
   }
@@ -95,7 +136,7 @@ async function loop() {
   const elapsed = Date.now() - startTime;
 
   if (elapsed > 900_000) {
-    await page.reload();
+    await Promise.allSettled(pages.map(page => page.reload()));
     startTime = Date.now();
   }
 

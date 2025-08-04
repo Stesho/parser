@@ -92,6 +92,7 @@ async function scrape() {
     await fs.writeFile(FILE_PATH, data, "utf-8");
   } catch(err) {
     console.log(err);
+    await page.reload({ waitUntil: "domcontentloaded" });
   }
 }
 

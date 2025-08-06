@@ -10,17 +10,10 @@ const args = minimist(process.argv.slice(2));
 const URL = args.url;
 const FILE_PATH = `/app/data/${args.file}`;
 const PAIR = args.pair.split('-') || ['USDTTRC20', 'SBERRUB'];
-const PROXY_LIST = args.proxies.split(",");
+const PROXY = '0k0yw32clkx6ig55ic8f5al:RNW78Fm5@fast.froxy.com:10000'
 
 let browser;
 let page;
-let currentProxyIndex = 0;
-
-const getNextProxy = () => {
-  const proxy = PROXY_LIST[currentProxyIndex % PROXY_LIST.length];
-  currentProxyIndex++;
-  return proxy;
-};
 
 async function init() {
   try {
@@ -28,8 +21,7 @@ async function init() {
       await browser.close();
     }
 
-    const proxy = getNextProxy();
-    const [auth, hostPort] = proxy.split("@");
+    const [auth, hostPort] = PROXY.split("@");
     const [user, pass] = auth.split(":");
     const [host, port] = hostPort.split(":");
 

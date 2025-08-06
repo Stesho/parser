@@ -4,7 +4,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js --url=https://exnode.ru/exchange/tether_trc20_usdt-usdttrc-to-sberbank-sberrub --pair=USDTTRC20-SBERRUB --file=rates_usdt_sber.txt --proxies=adkgwmfT:uGYhU2yM@193.58.170.58:64392,adkgwmfT:uGYhU2yM@45.145.91.110:63538,adkgwmfT:uGYhU2yM@45.128.129.16:62588",
+    "start": "node index.js --url=https://exnode.ru/exchange/tether_trc20_usdt-usdttrc-to-sberbank-sberrub --pair=USDTTRC20-SBERRUB --file=rates_usdt_sber.txt",
     "postinstall": "npx puppeteer browsers install chrome"
   },
   "author": "",

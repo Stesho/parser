@@ -14,6 +14,8 @@ const PROXY = '0k0yw32clkx6ig55ic8f5al:RNW78Fm5@fast.froxy.com:10000'
 
 let browser;
 let page;
+let zeroCount = 0;
+let startTime = Date.now();
 
 async function init() {
   try {
@@ -25,7 +27,7 @@ async function init() {
     const [user, pass] = auth.split(":");
     const [host, port] = hostPort.split(":");
 
-    console.log(`[INFO] Используем прокси: ${host}:${port}`);
+    console.log(`[INFO] Reload browser`);
 
     browser = await puppeteer.launch({
       headless: true,
@@ -67,7 +69,14 @@ async function scrape() {
 
     console.log(log);
 
+    if(zeroCount > 4) {
+      zeroCount = 0;
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      return;
+    }
+
     if(bestRate === '0') {
+      zeroCount++;
       return;
     }
     
@@ -87,8 +96,6 @@ async function scrape() {
     await page.reload({ waitUntil: "domcontentloaded" });
   }
 }
-
-let startTime = Date.now();
 
 async function loop() {
   const elapsed = Date.now() - startTime;

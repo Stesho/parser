@@ -10,7 +10,7 @@ const args = minimist(process.argv.slice(2));
 const URL = args.url;
 const FILE_PATH = `/app/data/${args.file}`;
 const PAIR = args.pair.split('-') || ['USDTTRC20', 'SBERRUB'];
-const PROXY = '0k0yw32clkx6ig55ic8f5al:RNW78Fm5@fast.froxy.com:10000'
+const PROXY = '1xoy4ol61ks6oi08pdot1gn:RNW78Fm5@fast.froxy.com:10000';
 
 let browser;
 let page;

@@ -84,6 +84,7 @@ async function scrape() {
       bestRate = rates[1];
     }
     
+    bestRate = bestRate.replace(/ /g, '');
     const [from, to] = PAIR;
     const data = [
       `${from} - ${to} : ${bestRate} + 0.0006`,
@@ -100,7 +101,7 @@ async function scrape() {
 async function loop() {
   const elapsed = Date.now() - startTime;
 
-  if (elapsed > 900_000) {
+  if (elapsed > 180_000) {
     await init();
     startTime = Date.now();
   }

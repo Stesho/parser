@@ -10,7 +10,7 @@ const args = minimist(process.argv.slice(2));
 const URL = args.url;
 const FILE_PATH = `/app/data/${args.file}`;
 const PAIR = args.pair.split('-') || ['USDTTRC20', 'SBERRUB'];
-const PROXY = '1xoy4ol61ks6oi08pdot1gn:RNW78Fm5@fast.froxy.com:10000';
+const PROXY = 'EM7GEJ:Yv1ampawVEsE@82.97.251.114:13834';
 
 let browser;
 let page;
@@ -101,7 +101,7 @@ async function scrape() {
 async function loop() {
   const elapsed = Date.now() - startTime;
 
-  if (elapsed > 180_000) {
+  if (elapsed > 120_000) {
     await init();
     startTime = Date.now();
   }

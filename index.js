@@ -83,6 +83,10 @@ async function scrape() {
       bestRate = rates[1];
     }
     
+    if(+bestRate > 86) {
+      return;
+    }
+
     const [from, to] = PAIR;
     const data = [
       `${from} - ${to} : ${bestRate} + 0.0006`,

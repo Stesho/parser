@@ -61,6 +61,7 @@ async function init() {
 
 async function scrape() {
   try {
+    await page.reload({ waitUntil: "domcontentloaded" });
     await page.waitForSelector("table ~ div > div:nth-of-type(2) > div > p:first-of-type");
     await page.waitForSelector("table ~ div div > div > div:nth-of-type(3) > p");
 

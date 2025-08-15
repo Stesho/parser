@@ -14,6 +14,8 @@ const PROXY_LIST = args.proxies.split(",");
 
 let browser;
 let page;
+let user;
+let pass;
 let currentProxyIndex = 0;
 
 const getNextProxy = () => {
@@ -30,7 +32,9 @@ async function init() {
 
     const proxy = getNextProxy();
     const [auth, hostPort] = proxy.split("@");
-    const [user, pass] = auth.split(":");
+    const userPass = auth.split(":");
+    user = userPass[0];
+    pass = userPass[1];
     const [host, port] = hostPort.split(":");
 
     console.log(`[INFO] Используем прокси: ${host}:${port}`);
@@ -102,13 +106,24 @@ async function scrape() {
 }
 
 let startTime = Date.now();
+let startTime1 = Date.now();
 
 async function loop() {
   const elapsed = Date.now() - startTime;
+  const elapsed1 = Date.now() - startTime1;
 
   if (elapsed > 900_000) {
     await init();
     startTime = Date.now();
+    startTime1 = Date.now();
+  }
+
+  if(elapsed1 > 60_000) {
+    await page.close();
+    page = await browser.newPage();
+    await page.authenticate({ username: user, password: pass });
+    await page.goto(URL, { waitUntil: "domcontentloaded", timeout: 60000 });
+    startTime1 = Date.now();
   }
 
   await scrape();

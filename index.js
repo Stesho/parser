@@ -100,14 +100,21 @@ async function scrape() {
   }
 }
 
-let startTime = Date.now();
+let initStartTime = Date.now();
+let reloadStartTime = Date.now();
 
 async function loop() {
-  const elapsed = Date.now() - startTime;
+  const initElapsed = Date.now() - initStartTime;
+  const reloadElapsed = Date.now() - reloadStartTime;
 
-  if (elapsed > 900_000) {
+  if (initElapsed > 900_000) {
     await init();
-    startTime = Date.now();
+    initStartTime = Date.now();
+  }
+
+  if (reloadElapsed > 300_000) {
+    await page.reload({ waitUntil: "domcontentloaded" });
+    reloadStartTime = Date.now();
   }
 
   await scrape();
